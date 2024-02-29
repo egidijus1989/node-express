@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const User = require("./userModel")
 
 const hotelSchema = new mongoose.Schema({
     name:{
@@ -43,12 +44,44 @@ const hotelSchema = new mongoose.Schema({
         type:String,
         required:[true, "musta have a image cover"]
     },
+    //child ref
+    managers: [
+        {
+            type:mongoose.Schema.ObjectId,
+            ref:"User"
+        }
+    ],
     createdAt:{
         type:Date,
         default:Date.now(),
         select:false
     },
+}, {
+    toJSON: {virtuals: true},
+    toObject: {virtuals: true}
 })
+
+hotelSchema.pre(/^find/, function(next){
+    this.populate({
+        path:"managers",
+        select: "name"
+    })
+    next()
+})
+
+hotelSchema.virtual('reviews', {
+    ref: "Review",
+    foreignField: 'hotel',
+    localField: "_id"
+})
+
+//Embedinimas - tinka tik statiskui metodui////////////////
+// managers: Array, 48 eiluteje
+// hotelSchema.pre("save", async function(){
+//     const managersPromise = this.managers.map(async id => User.findById(id))
+//     this.managers = await Promise.all(managersPromise)
+// })
+//
 
 const Hotel = mongoose.model('Hotel', hotelSchema)
 
